@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shop Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4 flex justify-between">
+    <button onclick="showPage('home')" class="font-bold">MyShop</button>
+    <button onclick="showPage('cart')">Cart 🛒 (<span id="cartCount">0</span>)</button>
+  </nav>
+
+  <!-- Pages -->
+  <main class="p-6">
+
+    <!-- Home Page -->
+    <section id="homePage" class="grid grid-cols-1 md:grid-cols-3 gap-6"></section>
+
+    <!-- Product Page -->
+    <section id="productPage" class="hidden max-w-lg mx-auto bg-white p-6 rounded-xl shadow">
+      <button onclick="showPage('home')" class="text-blue-600 mb-4">← Back</button>
+      <img id="productImage" class="w-full h-60 object-cover rounded" />
+      <h1 id="productName" class="text-2xl font-bold mt-4"></h1>
+      <p id="productDesc" class="text-gray-700 mt-2"></p>
+      <p id="productPrice" class="text-lg font-semibold mt-3"></p>
+      <button id="addProductBtn" class="bg-green-600 text-white px-4 py-2 mt-4 rounded">Add to Cart</button>
+    </section>
+
+    <!-- Cart Page -->
+    <section id="cartPage" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow">
+      <button onclick="showPage('home')" class="text-blue-600 mb-4">← Back</button>
+      <h1 class="text-xl font-bold mb-4">Shopping Cart</h1>
+      <div id="cartItems"></div>
+    </section>
+
+  </main>
+
+  <script>
+    // Sample products
+    const products = [
+      { id: 1, name: "iPhone 15", price: 1200, image: "https://via.placeholder.com/300", description: "Newest Apple iPhone." },
+      { id: 2, name: "Samsung Galaxy S23", price: 950, image: "https://via.placeholder.com/300", description: "Flagship Samsung phone." },
+      { id: 3, name: "MacBook Pro", price: 2400, image: "https://via.placeholder.com/300", description: "Powerful laptop for creators." },
+      { id: 4, name: "AirPods Pro", price: 250, image: "https://via.placeholder.com/300", description: "Noise-cancelling earbuds." },
+    ];
+
+    let cart = [];
+    let currentProduct = null;
+
+    const homePage = document.getElementById("homePage");
+    const productPage = document.getElementById("productPage");
+    const cartPage = document.getElementById("cartPage");
+    const cartItems = document.getElementById("cartItems");
+    const cartCount = document.getElementById("cartCount");
+
+    // Render home products
+    function renderHome() {
+      homePage.innerHTML = "";
+      products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "bg-white p-4 rounded-xl shadow";
+        div.innerHTML = `
+          <img src="${p.image}" class="w-full h-40 object-cover rounded"/>
+          <h2 class="text-lg font-semibold mt-2">${p.name}</h2>
+          <p class="text-gray-600">$${p.price}</p>
+          <div class="flex justify-between mt-3">
+            <button onclick="showProduct(${p.id})" class="text-blue-500">Details</button>
+            <button onclick="addToCart(${p.id})" class="bg-blue-600 text-white px-3 py-1 rounded">Add</button>
+          </div>
+        `;
+        homePage.appendChild(div);
+      });
+    }
+
+    // Show product page
+    function showProduct(id) {
+      const product = products.find(p => p.id === id);
+      currentProduct = product;
+      document.getElementById("productImage").src = product.image;
+      document.getElementById("productName").textContent = product.name;
+      document.getElementById("productDesc").textContent = product.description;
+      document.getElementById("productPrice").textContent = "$" + product.price;
+      document.getElementById("addProductBtn").onclick = () => addToCart(product.id);
+      showPage("product");
+    }
+
+    // Add to cart
+    function addToCart(id) {
+      const product = products.find(p => p.id === id);
+      const exist = cart.find(i => i.id === id);
+      if (exist) {
+        exist.qty++;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
+      updateCartCount();
+    }
+
+    // Remove from cart
+    function removeFromCart(id) {
+      cart = cart.filter(item => item.id !== id);
+      updateCartCount();
+      renderCart();
+    }
+
+    // Increase qty
+    function increaseQty(id) {
+      const item = cart.find(i => i.id === id);
+      if (item) item.qty++;
+      renderCart();
+    }
+
+    // Decrease qty
+    function decreaseQty(id) {
+      const item = cart.find(i => i.id === id);
+      if (item && item.qty > 1) item.qty--;
+      renderCart();
+    }
+
+    // Render cart
+    function renderCart() {
+      cartItems.innerHTML = "";
+      if (cart.length === 0) {
+        cartItems.innerHTML = "<p>Your cart is empty 🛒</p>";
+        return;
+      }
+      cart.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "flex justify-between items-center border-b py-3";
+        div.innerHTML = `
+          <div>
+            <h3 class="font-semibold">${item.name}</h3>
+            <p>$${item.price} x ${item.qty}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="decreaseQty(${item.id})" class="px-2 bg-gray-200 rounded">-</button>
+            <span>${item.qty}</span>
+            <button onclick="increaseQty(${item.id})" class="px-2 bg-gray-200 rounded">+</button>
+            <button onclick="removeFromCart(${item.id})" class="text-red-600 ml-3">Remove</button>
+          </div>
+        `;
+        cartItems.appendChild(div);
+      });
+    }
+
+    // Update cart count
+    function updateCartCount() {
+      cartCount.textContent = cart.reduce((sum, i) => sum + i.qty, 0);
+    }
+
+    // Page navigation
+    function showPage(page) {
+      homePage.classList.add("hidden");
+      productPage.classList.add("hidden");
+      cartPage.classList.add("hidden");
+
+      if (page === "home") homePage.classList.remove("hidden");
+      if (page === "product") productPage.classList.remove("hidden");
+      if (page === "cart") {
+        cartPage.classList.remove("hidden");
+        renderCart();
+      }
+    }
+
+    // Init
+    renderHome();
+    showPage("home");
+  </script>
+</body>
+</html>
